@@ -2,29 +2,29 @@ package main
 
 import (
 	"fmt"
-    "io/ioutil"
+	"io/ioutil"
 
-	"github.com/valyala/fasthttp"
 	"github.com/fasthttp/router"
+	"github.com/valyala/fasthttp"
 
 	"github.com/tdewolff/minify/v2"
 	"github.com/tdewolff/minify/v2/svg"
 
-    "crypto/hmac"
+	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 
-	"strings"
 	"bytes"
+	"strings"
 	"text/template"
 
+	"os"
 	"os/exec"
-    "os"
 
 	"encoding/base64"
 )
 
-func addLatexToTemplate(latexCode string) (string) {
+func addLatexToTemplate(latexCode string) string {
 	t, _ := template.New("foo").Parse(`{{define "T"}}
 \documentclass{standalone}
 \nofiles
@@ -38,11 +38,10 @@ func addLatexToTemplate(latexCode string) (string) {
 \begin{document}
 {{.}}
 \end{document}{{end}}`)
-    buf := &bytes.Buffer{}
-    t.ExecuteTemplate(buf, "T", latexCode)
-    return buf.String()
+	buf := &bytes.Buffer{}
+	t.ExecuteTemplate(buf, "T", latexCode)
+	return buf.String()
 }
-
 
 func LatexToSvg(ctx *fasthttp.RequestCtx) {
 	latexBase64 := ctx.UserValue("latex").(string)
@@ -54,7 +53,7 @@ func LatexToSvg(ctx *fasthttp.RequestCtx) {
 	latexFilePath := strings.Join([]string{"tmpfs/", latexCodeShaHex}, "")
 	latexFilePathPdf := strings.Join([]string{latexFilePath, ".pdf"}, "")
 	latexFilePathSvg := strings.Join([]string{latexFilePath, ".svg"}, "")
-	
+
 	ioutil.WriteFile(latexFilePath, latexCodeByte, 0644)
 
 	cmd := exec.Command("pdflatex", "--interaction=batchmode", "--output-directory=tmpfs", latexFilePath)
@@ -73,13 +72,13 @@ func LatexToSvg(ctx *fasthttp.RequestCtx) {
 
 	ioutil.WriteFile(latexFilePathSvg, svgByteMin, 0644)
 
-	go delHexFiles (latexCodeShaHex)
+	go delHexFiles(latexCodeShaHex)
 
 	ctx.SetContentType("image/svg+xml")
 	fmt.Fprintf(ctx, "%s", string(svgByteMin))
 }
 
-func delHexFiles (latexCodeShaHex string) {
+func delHexFiles(latexCodeShaHex string) {
 	latexFilePath := strings.Join([]string{"tmpfs/", latexCodeShaHex}, "")
 	latexFilePathPdf := strings.Join([]string{latexFilePath, ".pdf"}, "")
 	latexFilePathLog := strings.Join([]string{latexFilePath, ".log"}, "")
@@ -88,7 +87,7 @@ func delHexFiles (latexCodeShaHex string) {
 	os.Remove(latexFilePathLog)
 }
 
-func main () {
+func main() {
 	r := router.New()
 	r.GET("/latex/{latex}", LatexToSvg)
 	fasthttp.ListenAndServe(":4000", r.Handler)
