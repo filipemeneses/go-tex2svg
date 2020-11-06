@@ -60,7 +60,7 @@ func LatexToSvg(ctx *fasthttp.RequestCtx) {
 	cmd.Start()
 	cmd.Wait()
 
-	cmdSvg := exec.Command("pdf2svg", latexFilePathPdf, latexFilePathSvg)
+	cmdSvg := exec.Command("pdf2svg", latexFilePathPdf, latexFilePathSvg, "1")
 	cmdSvg.Start()
 	cmdSvg.Wait()
 
@@ -82,9 +82,11 @@ func delHexFiles(latexCodeShaHex string) {
 	latexFilePath := strings.Join([]string{"tmpfs/", latexCodeShaHex}, "")
 	latexFilePathPdf := strings.Join([]string{latexFilePath, ".pdf"}, "")
 	latexFilePathLog := strings.Join([]string{latexFilePath, ".log"}, "")
+	latexFilePathSvg := strings.Join([]string{latexFilePath, ".svg"}, "")
 	os.Remove(latexFilePath)
 	os.Remove(latexFilePathPdf)
 	os.Remove(latexFilePathLog)
+	os.Remove(latexFilePathSvg)
 }
 
 func main() {
