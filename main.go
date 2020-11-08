@@ -67,8 +67,6 @@ func LatexToSvg(ctx *fasthttp.RequestCtx) {
 	m.AddFunc("image/svg+xml", svg.Minify)
 	svgByteMin, _ := m.Bytes("image/svg+xml", svgByte)
 
-	ioutil.WriteFile(latexFilePathSvg, svgByteMin, 0644)
-
 	go delHexFiles(latexCodeShaHex)
 
 	ctx.SetContentType("image/svg+xml")
@@ -88,6 +86,6 @@ func delHexFiles(latexCodeShaHex string) {
 
 func main() {
 	r := router.New()
-	r.POST("/latex", LatexToSvg)
+	r.POST("/latex-to-svg", LatexToSvg)
 	fasthttp.ListenAndServe(":4000", r.Handler)
 }
