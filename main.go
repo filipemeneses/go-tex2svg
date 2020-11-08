@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 
 	"github.com/fasthttp/router"
@@ -41,8 +40,7 @@ func addLatexToTemplate(latexCode string) string {
 	return buf.String()
 }
 
-func LatexToSvg(ctx *fasthttp.RequestCtx) {
-	latexCode := string(ctx.PostBody()[:])
+func LatexToSvg(latexCode string) []byte {
 	latexCodeByte := []byte(addLatexToTemplate(string(latexCode)))
 	hashGenerator := hmac.New(sha256.New, []byte(nil))
 	hashGenerator.Write(latexCodeByte)
@@ -69,8 +67,14 @@ func LatexToSvg(ctx *fasthttp.RequestCtx) {
 
 	go delHexFiles(latexCodeShaHex)
 
+	return svgByteMin
+}
+
+func HandleLatex(ctx *fasthttp.RequestCtx) {
+	latexSvgMinBytes := LatexToSvg(string(ctx.PostBody()[:]))
 	ctx.SetContentType("image/svg+xml")
-	fmt.Fprintf(ctx, "%s", string(svgByteMin))
+	ctx.Response.Header.Add("Content-Encoding", "gzip")
+	ctx.Write(fasthttp.AppendGzipBytes(nil, latexSvgMinBytes))
 }
 
 func delHexFiles(latexCodeShaHex string) {
@@ -86,6 +90,6 @@ func delHexFiles(latexCodeShaHex string) {
 
 func main() {
 	r := router.New()
-	r.POST("/latex-to-svg", LatexToSvg)
+	r.POST("/latex-to-svg", HandleLatex)
 	fasthttp.ListenAndServe(":4000", r.Handler)
 }
