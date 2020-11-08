@@ -20,8 +20,6 @@ import (
 
 	"os"
 	"os/exec"
-
-	"encoding/base64"
 )
 
 func addLatexToTemplate(latexCode string) string {
@@ -44,10 +42,9 @@ func addLatexToTemplate(latexCode string) string {
 }
 
 func LatexToSvg(ctx *fasthttp.RequestCtx) {
-	latexBase64 := ctx.UserValue("latex").(string)
-	latexCode, _ := base64.StdEncoding.DecodeString(latexBase64)
+	latexCode := string(ctx.PostBody()[:])
 	latexCodeByte := []byte(addLatexToTemplate(string(latexCode)))
-	hashGenerator := hmac.New(sha256.New, []byte("1"))
+	hashGenerator := hmac.New(sha256.New, []byte(nil))
 	hashGenerator.Write(latexCodeByte)
 	latexCodeShaHex := hex.EncodeToString(hashGenerator.Sum(nil))
 	latexFilePath := strings.Join([]string{"tmpfs/", latexCodeShaHex}, "")
@@ -91,6 +88,6 @@ func delHexFiles(latexCodeShaHex string) {
 
 func main() {
 	r := router.New()
-	r.GET("/latex/{latex}", LatexToSvg)
+	r.POST("/latex", LatexToSvg)
 	fasthttp.ListenAndServe(":4000", r.Handler)
 }
