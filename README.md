@@ -27,8 +27,6 @@ docker run -d -p 4000:4000 tex2svg
 
 ### Convert
 
-`go-tex2svg` receives a base64 string of a latex code and return the compiled svg
-
 ```
 curl -d "$\\frac{1}{2}$" http://localhost:4000/latex
 ```
